@@ -53,7 +53,11 @@ test_expect_success 'setup helper scripts' '
 	#!/bin/sh
 	echo >&2 askpass: $*
 	what=`echo $1 | tr A-Z a-z | tr -cd a-z`
-	echo "askpass-$what"
+	if test -f "askpass-$what"; then
+		cat "askpass-$what"
+	else
+		echo "askpass-$what"
+	fi
 	EOF
 	chmod +x askpass &&
 	GIT_ASKPASS=askpass &&
@@ -226,9 +230,11 @@ test_expect_success 'credential-cache requires matching usernames' '
 	askpass: Username:
 	askpass: Password:
 	EOF
+	test_when_finished "rm -f askpass-password" &&
+	echo other-password >askpass-password &&
 	check --unique=host --username=other cache <<-\EOF
 	username=other
-	password=askpass-password
+	password=other-password
 	--
 	askpass: Password:
 	EOF
