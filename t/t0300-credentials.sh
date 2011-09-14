@@ -314,6 +314,30 @@ test_expect_success 'credential-store requires matching unique token' '
 	EOF
 '
 
+test_expect_success 'credential-store requires matching usernames' '
+	test_when_finished "rm -f .git-credentials" &&
+	check --unique=host store <<-\EOF &&
+	username=askpass-username
+	password=askpass-password
+	--
+	askpass: Username:
+	askpass: Password:
+	EOF
+	test_when_finished "rm -f askpass-password" &&
+	echo other-password >askpass-password &&
+	check --unique=host --username=other store <<-\EOF &&
+	username=other
+	password=other-password
+	--
+	askpass: Password:
+	EOF
+	check --unique=host --username=askpass-username store <<-\EOF
+	username=askpass-username
+	password=askpass-password
+	--
+	EOF
+'
+
 test_expect_success 'credential-store removes rejected credentials' '
 	test_when_finished "rm -f .git-credentials" &&
 	check --unique=host store <<-\EOF &&
@@ -323,15 +347,25 @@ test_expect_success 'credential-store removes rejected credentials' '
 	askpass: Username:
 	askpass: Password:
 	EOF
+	check --unique=host --username=other store <<-\EOF &&
+	username=other
+	password=askpass-password
+	--
+	askpass: Password:
+	EOF
 	check --reject --unique=host --username=askpass-username store <<-\EOF &&
 	--
 	EOF
-	check --unique=host store <<-\EOF
+	check --unique=host --username=askpass-username store <<-\EOF &&
 	username=askpass-username
 	password=askpass-password
 	--
-	askpass: Username:
 	askpass: Password:
+	EOF
+	check --unique=host --username=other store <<-\EOF
+	username=other
+	password=askpass-password
+	--
 	EOF
 '
 
