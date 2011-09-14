@@ -52,7 +52,8 @@ test_expect_success 'setup helper scripts' '
 	cat >askpass <<-\EOF &&
 	#!/bin/sh
 	echo >&2 askpass: $*
-	echo askpass-result
+	what=`echo $1 | tr A-Z a-z | tr -cd a-z`
+	echo "askpass-$what"
 	EOF
 	chmod +x askpass &&
 	GIT_ASKPASS=askpass &&
@@ -155,8 +156,8 @@ test_expect_success 'do not bother completing already-full credential' '
 # askpass helper is run, we know the internal getpass is working.
 test_expect_success 'empty methods falls back to internal getpass' '
 	check <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
@@ -166,7 +167,7 @@ test_expect_success 'empty methods falls back to internal getpass' '
 test_expect_success 'internal getpass does not ask for known username' '
 	check --username=foo <<-\EOF
 	username=foo
-	password=askpass-result
+	password=askpass-password
 	--
 	askpass: Password:
 	EOF
@@ -176,7 +177,7 @@ test_expect_success 'internal getpass can pull from config' '
 	git config credential.foo.username configured-username
 	check --unique=foo <<-\EOF
 	username=configured-username
-	password=askpass-result
+	password=askpass-password
 	--
 	askpass: Password:
 	EOF
@@ -185,15 +186,15 @@ test_expect_success 'internal getpass can pull from config' '
 test_expect_success 'credential-cache caches password' '
 	test_when_finished "git credential-cache --exit" &&
 	check --unique=host cache <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	check --unique=host cache <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	EOF
 '
@@ -201,15 +202,15 @@ test_expect_success 'credential-cache caches password' '
 test_expect_success 'credential-cache requires matching unique token' '
 	test_when_finished "git credential-cache --exit" &&
 	check --unique=host cache <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	check --unique=host2 cache <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
@@ -219,15 +220,15 @@ test_expect_success 'credential-cache requires matching unique token' '
 test_expect_success 'credential-cache requires matching usernames' '
 	test_when_finished "git credential-cache --exit" &&
 	check --unique=host cache <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	check --unique=host --username=other cache <<-\EOF
 	username=other
-	password=askpass-result
+	password=askpass-password
 	--
 	askpass: Password:
 	EOF
@@ -236,16 +237,16 @@ test_expect_success 'credential-cache requires matching usernames' '
 test_expect_success 'credential-cache times out' '
 	test_when_finished "git credential-cache --exit || true" &&
 	check --unique=host "cache --timeout=1" <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	sleep 2 &&
 	check --unique=host cache <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
@@ -255,18 +256,18 @@ test_expect_success 'credential-cache times out' '
 test_expect_success 'credential-cache removes rejected credentials' '
 	test_when_finished "git credential-cache --exit || true" &&
 	check --unique=host cache <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
-	check --reject --unique=host --username=askpass-result cache <<-\EOF &&
+	check --reject --unique=host --username=askpass-username cache <<-\EOF &&
 	--
 	EOF
 	check --unique=host cache <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
@@ -276,15 +277,15 @@ test_expect_success 'credential-cache removes rejected credentials' '
 test_expect_success 'credential-store stores password' '
 	test_when_finished "rm -f .git-credentials" &&
 	check --unique=host store <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	check --unique=host store <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	EOF
 '
@@ -292,15 +293,15 @@ test_expect_success 'credential-store stores password' '
 test_expect_success 'credential-store requires matching unique token' '
 	test_when_finished "rm -f .git-credentials" &&
 	check --unique=host store <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
 	check --unique=host2 store <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
@@ -310,18 +311,18 @@ test_expect_success 'credential-store requires matching unique token' '
 test_expect_success 'credential-store removes rejected credentials' '
 	test_when_finished "rm -f .git-credentials" &&
 	check --unique=host store <<-\EOF &&
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
 	EOF
-	check --reject --unique=host --username=askpass-result store <<-\EOF &&
+	check --reject --unique=host --username=askpass-username store <<-\EOF &&
 	--
 	EOF
 	check --unique=host store <<-\EOF
-	username=askpass-result
-	password=askpass-result
+	username=askpass-username
+	password=askpass-password
 	--
 	askpass: Username:
 	askpass: Password:
