@@ -692,26 +692,23 @@ static struct commit *parse_insn_line(char *start, struct replay_opts *opts)
 	unsigned char commit_sha1[20];
 	char sha1_abbrev[40];
 	enum replay_action action;
-	int insn_len = 0;
-	char *p, *q;
+	const char *p, *q;
 
+	p = start;
 	if (!prefixcmp(start, "pick ")) {
 		action = CHERRY_PICK;
-		insn_len = strlen("pick");
-		p = start + insn_len + 1;
+		p += strlen("pick ");
 	} else if (!prefixcmp(start, "revert ")) {
 		action = REVERT;
-		insn_len = strlen("revert");
-		p = start + insn_len + 1;
+		p += strlen("revert ");
 	} else
 		return NULL;
 
-	q = strchr(p, ' ');
-	if (!q || q - p + 1 > sizeof(sha1_abbrev))
+	q = p + strcspn(p, " \n");
+	if (q - p + 1 > sizeof(sha1_abbrev))
 		return NULL;
-	q++;
-
-	strlcpy(sha1_abbrev, p, q - p);
+	memcpy(sha1_abbrev, p, q - p);
+	sha1_abbrev[q - p] = '\0';
 
 	/*
 	 * Verify that the action matches up with the one in
