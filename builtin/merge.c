@@ -867,7 +867,8 @@ static void prepare_to_commit(void)
 {
 	struct strbuf msg = STRBUF_INIT;
 	strbuf_addbuf(&msg, &merge_msg);
-	strbuf_addch(&msg, '\n');
+	if (msg.len && msg.buf[msg.len-1] != '\n')
+		strbuf_addch(&msg, '\n');
 	write_merge_msg(&msg);
 	run_hook(get_index_file(), "prepare-commit-msg",
 		 git_path("MERGE_MSG"), "merge", NULL, NULL);
