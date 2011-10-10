@@ -708,7 +708,7 @@ static int parse_insn_line(char *start, struct replay_insn_list *item)
 		size_t len = strchrnul(p, '\n') - p;
 		if (len > 255)
 			len = 255;
-		return error(_("Unrecognized action: %.*s"), len, p);
+		return error(_("Unrecognized action: %.*s"), (int)len, p);
 	}
 
 	q = p + strcspn(p, " \n");
@@ -716,7 +716,7 @@ static int parse_insn_line(char *start, struct replay_insn_list *item)
 		size_t len = q - p;
 		if (len > 255)
 			len = 255;
-		return error(_("Object name too large: %.*s"), len, p);
+		return error(_("Object name too large: %.*s"), (int)len, p);
 	}
 	memcpy(sha1_abbrev, p, q - p);
 	sha1_abbrev[q - p] = '\0';
